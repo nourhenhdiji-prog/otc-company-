@@ -1,0 +1,12 @@
+# GitLab Pages : publie le site statique à chaque push sur la branche par défaut.
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp -r index.html manifest.webmanifest css js assets public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

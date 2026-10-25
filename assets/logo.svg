@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 110" color="#3d3d40">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M30 14 68 52 30 90" stroke="currentColor" stroke-width="14"/>
+    <path d="M26 34 44 52 26 70" stroke="#a3222b" stroke-width="12"/>
+    <path d="M82 38 92 28" stroke="currentColor" stroke-width="14"/>
+    <circle cx="152" cy="48" r="28" stroke="currentColor" stroke-width="7"/>
+    <path d="M118 44A36 36 0 0 1 176 16" stroke="#a3222b" stroke-width="7"/>
+    <path d="M196 20H240M218 20V77" stroke="currentColor" stroke-width="7"/>
+    <path d="M299.8 28.2A28 28 0 1 0 299.8 67.8" stroke="currentColor" stroke-width="7"/>
+  </g>
+  <text x="230" y="102" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="currentColor">Optical Trade Company</text>
+</svg>
