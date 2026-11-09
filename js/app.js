@@ -89,10 +89,6 @@
         return 'otc:v1:c' + agentId + ':orders';
     }
 
-    function counterKey(agentId) {
-        return 'otc:v1:c' + agentId + ':counter';
-    }
-
     function loadOrders(agentId) {
         const orders = readJson(localStorage, ordersKey(agentId), []);
         return Array.isArray(orders) ? orders.map(normalizeOrder).filter(Boolean) : [];
@@ -121,15 +117,13 @@
         saveOrders(agentId, loadOrders(agentId).filter(function (o) { return o.number !== number; }));
     }
 
-    function getCounter(agentId) {
-        return Number(readJson(localStorage, counterKey(agentId), 0)) || 0;
-    }
-
-    // Numbers are never reused, even after a deletion.
+    // Numbers stay successive: a new order takes the first number left free by a deletion.
     function takeNextNumber(agentId) {
-        const highest = loadOrders(agentId).reduce(function (max, o) { return Math.max(max, o.number); }, 0);
-        const next = Math.max(getCounter(agentId), highest) + 1;
-        writeJson(localStorage, counterKey(agentId), next);
+        const used = new Set(loadOrders(agentId).map(function (o) { return o.number; }));
+        let next = 1;
+        while (used.has(next)) {
+            next += 1;
+        }
         return next;
     }
 
@@ -338,10 +332,6 @@
         }, 2600);
     }
 
-    function agentBadge(agent, extraClass) {
-        return '<span class="agent-num ' + (extraClass || '') + '" style="--hue:' + ((agent.id * 67 + 220) % 360) + '">' + agent.id + '</span>';
-    }
-
     function brand() {
         return '<a class="brand" href="#/"><span class="brand-mark">' + logoMark() + '</span>' +
             '<span class="brand-text"><strong>' + esc(COMPANY.short) + '</strong><small>Bons de commande</small></span></a>';
@@ -350,7 +340,7 @@
     function topbar(agent) {
         return '<header class="topbar"><div class="topbar-inner">' + brand() +
             '<div class="topbar-right">' +
-                '<span class="agent-chip">' + agentBadge(agent, 'sm') + '<span class="agent-chip-name">' + esc(agent.name) + '</span></span>' +
+                '<span class="agent-chip"><span class="agent-chip-name">' + esc(agent.name) + '</span></span>' +
                 '<button type="button" class="icon-btn" id="logout" title="Changer de commercial" aria-label="Changer de commercial">' + ICON.logout + '</button>' +
             '</div></div></header>';
     }
@@ -398,11 +388,10 @@
 
     function loginGrid() {
         return '<h1>Bon de commande</h1>' +
-            '<p class="muted">Choisissez votre numéro de commercial pour accéder à vos commandes.</p>' +
+            '<p class="muted">Choisissez votre nom pour accéder à vos commandes.</p>' +
             '<div class="agent-grid">' + CFG.commercials.map(function (agent) {
                 const count = loadOrders(agent.id).length;
                 return '<button type="button" class="agent-card" data-id="' + agent.id + '">' +
-                    agentBadge(agent) +
                     '<span class="agent-info"><strong>' + esc(agent.name) + '</strong>' +
                     '<small>' + (count ? plural(count, 'commande', 'commandes') : 'Aucune commande') + '</small></span>' +
                     (agent.pin ? '<span class="agent-lock" title="Code requis">' + ICON.lock + '</span>' : '') +
@@ -428,7 +417,7 @@
         const step = document.getElementById('loginStep');
         step.innerHTML =
             '<button type="button" class="back-link" id="pinBack">' + ICON.back + ' Autre commercial</button>' +
-            '<div class="pin-head">' + agentBadge(agent, 'lg') + '<div><h1>' + esc(agent.name) + '</h1><p class="muted">Commercial n°' + agent.id + '</p></div></div>' +
+            '<div class="pin-head"><div><h1>' + esc(agent.name) + '</h1></div></div>' +
             '<form id="pinForm" class="pin-form" novalidate>' +
                 '<label for="pinInput">Code d\'accès</label>' +
                 '<input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required>' +
@@ -473,7 +462,7 @@
         app.innerHTML = topbar(agent) +
             '<main class="page">' +
                 '<section class="page-head">' +
-                    '<div><p class="eyebrow">Commercial n°' + agent.id + '</p><h1>Mes commandes</h1></div>' +
+                    '<div><p class="eyebrow">' + esc(agent.name) + '</p><h1>Mes commandes</h1></div>' +
                     '<button type="button" class="btn btn-primary btn-lg" id="newOrder">' + ICON.plus + '<span>Nouvelle commande</span></button>' +
                 '</section>' +
                 '<section class="stats">' +
@@ -600,7 +589,6 @@
             version: 1,
             commercialId: agent.id,
             exportedAt: new Date().toISOString(),
-            counter: getCounter(agent.id),
             orders: loadOrders(agent.id)
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -630,7 +618,8 @@
             }
             // Keeps commercials' orders separate: a backup only goes back to its owner.
             if (Number(data.commercialId) !== agent.id) {
-                toast('Cette sauvegarde appartient au commercial n°' + data.commercialId + '.', 'error');
+                const owner = getAgent(Number(data.commercialId));
+                toast('Cette sauvegarde appartient à ' + (owner ? owner.name : 'un autre commercial') + '.', 'error');
                 return;
             }
 
@@ -644,10 +633,7 @@
                 }
             });
 
-            const merged = Array.from(byNumber.values());
-            saveOrders(agent.id, merged);
-            const highest = merged.reduce(function (max, o) { return Math.max(max, o.number); }, 0);
-            writeJson(localStorage, counterKey(agent.id), Math.max(getCounter(agent.id), Number(data.counter) || 0, highest));
+            saveOrders(agent.id, Array.from(byNumber.values()));
 
             toast(added ? plural(added, 'commande importée', 'commandes importées') + '.' : 'Rien de nouveau à importer.', 'success');
             renderOrders(agent);
@@ -686,7 +672,7 @@
                         '<div class="field-grid">' +
                             field('date', 'Date', 'date', order.date) +
                             '<div class="field"><span class="field-label">Agent commercial</span>' +
-                                '<div class="readonly-field">' + agentBadge(agent, 'xs') + esc(agent.name) + '</div></div>' +
+                                '<div class="readonly-field">' + esc(agent.name) + '</div></div>' +
                             field('client', 'Client', 'text', order.client, 'Nom du client ou de l\'opticien') +
                             field('address', 'Adresse', 'text', order.address) +
                             field('email', 'Email', 'email', order.email) +

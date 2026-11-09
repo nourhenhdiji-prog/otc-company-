@@ -315,48 +315,6 @@ svg {
     font-size: 12px;
 }
 
-.agent-num {
-    display: inline-grid;
-    place-items: center;
-    flex: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 13px;
-    background: hsl(var(--hue) 80% 94%);
-    color: hsl(var(--hue) 60% 34%);
-    font-weight: 800;
-    font-size: 18px;
-    font-variant-numeric: tabular-nums;
-}
-
-@media (prefers-color-scheme: dark) {
-    .agent-num {
-        background: hsl(var(--hue) 35% 21%);
-        color: hsl(var(--hue) 85% 80%);
-    }
-}
-
-.agent-num.sm {
-    width: 28px;
-    height: 28px;
-    border-radius: 9px;
-    font-size: 13px;
-}
-
-.agent-num.xs {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    font-size: 12px;
-}
-
-.agent-num.lg {
-    width: 60px;
-    height: 60px;
-    border-radius: 17px;
-    font-size: 26px;
-}
-
 /* ---------- Login ---------- */
 
 .login {
@@ -541,10 +499,6 @@ svg {
     background: var(--surface);
     font-size: 14px;
     font-weight: 600;
-}
-
-.agent-chip .agent-num {
-    border-radius: 999px;
 }
 
 .agent-chip-name {

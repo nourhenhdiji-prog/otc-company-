@@ -2,8 +2,8 @@
 
 Application web statique (HTML/CSS/JS, sans build) pour créer les bons de commande de montures d'**Optical Trade Company**.
 
-- Chaque commercial se connecte avec **son numéro** et ne voit que **ses propres commandes**.
-- Les commandes sont numérotées par commercial : le commercial 1 a ses commandes n°1, 2, 3… (code `BC-01-0001`, `BC-01-0002`…), le commercial 2 a les siennes (`BC-02-0001`…). Un numéro supprimé n'est jamais réutilisé.
+- Chaque commercial se connecte avec **son nom** et ne voit que **ses propres commandes**.
+- Les commandes sont numérotées par commercial : le commercial 1 a ses commandes n°1, 2, 3… (code `BC-01-0001`, `BC-01-0002`…), le commercial 2 a les siennes (`BC-02-0001`…). Les numéros restent successifs : un numéro libéré par une suppression est repris par la commande suivante.
 - Enregistrement automatique, recherche, filtres brouillon / générée, duplication d'une commande.
 - Génération du bon au format A4 en image PNG (42 références par page), téléchargement ou partage direct (WhatsApp, e-mail…) sur mobile.
 - Mode clair / sombre automatique, adapté au téléphone.
