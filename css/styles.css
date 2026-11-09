@@ -28,7 +28,7 @@
     color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
+@media all { /* Thème sombre sur tous les appareils */
     :root {
         --bg: #0d1117;
         --surface: #161b24;
@@ -309,7 +309,7 @@ svg {
     display: none;
 }
 
-@media (prefers-color-scheme: dark) {
+@media all { /* Thème sombre sur tous les appareils */
     .brand-logo-light {
         display: none;
     }
@@ -1195,7 +1195,7 @@ input.is-invalid {
     color: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
+@media all { /* Thème sombre sur tous les appareils */
     .toast-success,
     .toast-warn,
     .toast-error {

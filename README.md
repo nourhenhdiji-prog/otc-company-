@@ -6,7 +6,7 @@ Application web statique (HTML/CSS/JS, sans build) pour créer les bons de comma
 - Les commandes sont numérotées par commercial : chaque commercial a ses commandes n°1, 2, 3… Le code contient l'année du bon puis son numéro (`BC-26-0001`, `BC-26-0002`…). Les numéros restent successifs : un numéro libéré par une suppression est repris par la commande suivante.
 - Enregistrement automatique, recherche, filtres brouillon / générée, duplication d'une commande.
 - Génération du bon au format A4 en image PNG (42 références par page), téléchargement ou partage direct (WhatsApp, e-mail…) sur mobile.
-- Mode clair / sombre automatique, adapté au téléphone.
+- Thème sombre sur tous les appareils, adapté au téléphone.
 
 ## Configurer les commerciaux
 
