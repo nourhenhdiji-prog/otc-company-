@@ -377,7 +377,10 @@
         app.innerHTML =
             '<main class="login">' +
                 '<div class="login-card">' +
-                    '<div class="login-brand">' + logoFull() + '</div>' +
+                    '<div class="login-brand">' +
+                        '<img class="brand-logo brand-logo-light" src="assets/logo-otc.png" alt="OTC Optical Trade Company">' +
+                        '<img class="brand-logo brand-logo-dark" src="assets/logo-otc-white.png" alt="OTC Optical Trade Company">' +
+                    '</div>' +
                     '<div id="loginStep">' + loginGrid() + '</div>' +
                 '</div>' +
                 '<p class="login-foot">' + esc(COMPANY.address) + '</p>' +
