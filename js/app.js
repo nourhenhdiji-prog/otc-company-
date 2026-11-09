@@ -5,7 +5,7 @@
     const COMPANY = CFG.company;
     const ITEMS_PER_TABLE = 21;
     const ITEMS_PER_PAGE = ITEMS_PER_TABLE * 2;
-    const SESSION_KEY = 'otc:v1:session';
+    const SESSION_KEY = 'otc:v2:session';
     const DOC_FONT_STACK = "'Inter', Arial, sans-serif";
 
     const app = document.getElementById('app');
@@ -22,7 +22,6 @@
         close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
         back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
         chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>',
-        logout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/></svg>',
         search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
         download: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
         upload: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>',
@@ -190,13 +189,6 @@
         route();
     }
 
-    function signOut() {
-        flushPendingSave();
-        localStorage.removeItem(SESSION_KEY);
-        location.hash = '#/';
-        route();
-    }
-
     /* ---------- Helpers ---------- */
 
     function today() {
@@ -342,12 +334,7 @@
         return '<header class="topbar"><div class="topbar-inner">' + brand() +
             '<div class="topbar-right">' +
                 '<span class="agent-chip"><span class="agent-chip-name">' + esc(agent.name) + '</span></span>' +
-                '<button type="button" class="icon-btn" id="logout" title="Changer de commercial" aria-label="Changer de commercial">' + ICON.logout + '</button>' +
             '</div></div></header>';
-    }
-
-    function bindTopbar() {
-        document.getElementById('logout').addEventListener('click', signOut);
     }
 
     /* ---------- Router ---------- */
@@ -394,11 +381,10 @@
         return '<h1>Bon de commande</h1>' +
             '<p class="muted">Choisissez votre nom pour accéder à vos commandes.</p>' +
             '<div class="agent-grid">' + CFG.commercials.map(function (agent) {
-                const count = loadOrders(agent.id).length;
                 return '<button type="button" class="agent-card" data-id="' + agent.id + '">' +
                     '<span class="agent-info"><strong>' + esc(agent.name) + '</strong>' +
-                    '<small>' + (count ? plural(count, 'commande', 'commandes') : 'Aucune commande') + '</small></span>' +
-                    (agent.pin ? '<span class="agent-lock" title="Code requis">' + ICON.lock + '</span>' : '') +
+                    '</span>' +
+                    (agent.pinHash ? '<span class="agent-lock" title="Code requis">' + ICON.lock + '</span>' : '') +
                     '<span class="agent-chevron">' + ICON.chevron + '</span>' +
                 '</button>';
             }).join('') + '</div>';
@@ -408,13 +394,19 @@
         document.querySelectorAll('.agent-card').forEach(function (button) {
             button.addEventListener('click', function () {
                 const agent = getAgent(Number(button.dataset.id));
-                if (!agent.pin) {
+                if (!agent.pinHash) {
                     signIn(agent);
                 } else {
                     showPinStep(agent);
                 }
             });
         });
+    }
+
+    async function pinMatches(agent, pin) {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('otc:' + agent.id + ':' + pin));
+        const hex = Array.from(new Uint8Array(digest)).map(function (b) { return pad(b.toString(16), 2); }).join('');
+        return hex === agent.pinHash;
     }
 
     function showPinStep(agent) {
@@ -443,9 +435,9 @@
             input.classList.remove('is-invalid');
         });
 
-        document.getElementById('pinForm').addEventListener('submit', function (event) {
+        document.getElementById('pinForm').addEventListener('submit', async function (event) {
             event.preventDefault();
-            if (input.value === String(agent.pin)) {
+            if (await pinMatches(agent, input.value)) {
                 signIn(agent);
             } else {
                 error.hidden = false;
@@ -493,7 +485,6 @@
                 '</section>' +
             '</main>';
 
-        bindTopbar();
         renderOrderList(agent, orders);
 
         document.getElementById('newOrder').addEventListener('click', function () {
@@ -701,7 +692,6 @@
                 '<button type="submit" form="orderForm" class="btn btn-primary btn-lg" id="generateBtn">' + ICON.file + '<span>Générer le bon</span></button>' +
             '</div></div>';
 
-        bindTopbar();
 
         const form = document.getElementById('orderForm');
         const itemsEl = document.getElementById('items');

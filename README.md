@@ -2,7 +2,7 @@
 
 Application web statique (HTML/CSS/JS, sans build) pour créer les bons de commande de montures d'**Optical Trade Company**.
 
-- Chaque commercial se connecte avec **son nom** et ne voit que **ses propres commandes**.
+- Chaque commercial clique sur **son nom** et entre **son mot de passe** une seule fois par téléphone ; il ne voit que **ses propres commandes**.
 - Les commandes sont numérotées par commercial : chaque commercial a ses commandes n°1, 2, 3… Le code contient l'année du bon puis son numéro (`BC-26-0001`, `BC-26-0002`…). Les numéros restent successifs : un numéro libéré par une suppression est repris par la commande suivante.
 - Enregistrement automatique, recherche, filtres brouillon / générée, duplication d'une commande.
 - Génération du bon au format A4 en image PNG (42 références par page), téléchargement ou partage direct (WhatsApp, e-mail…) sur mobile.
@@ -14,12 +14,13 @@ Modifiez [js/config.js](js/config.js) :
 
 ```js
 commercials: [
-    { id: 1, name: 'Ahmed Ben Ali', pin: '1234' },
-    { id: 2, name: 'Sarra Trabelsi', pin: '' }   // '' = pas de code
+    { id: 1, name: 'Ahmed Ben Ali', pinHash: '<empreinte>' }
 ]
 ```
 
-> Le code PIN évite de se tromper de commercial, mais ce n'est **pas** une sécurité : le site est public et ce fichier est lisible par tous.
+`pinHash` est l'empreinte SHA-256 du texte `otc:<id>:<mot de passe>` ; le mot de passe lui-même n'est pas écrit dans le fichier.
+
+> Le mot de passe évite qu'un commercial entre sur le compte d'un autre, mais ce n'est **pas** une sécurité : le site est public et ce fichier est lisible par tous.
 
 ## Logo imprimé
 
