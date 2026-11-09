@@ -20,7 +20,9 @@ window.OTC_CONFIG = {
         rc: 'B03128200',
         // Logo imprimé sur le bon : '' = logo O.T.C dessiné par le site.
         // Pour utiliser le fichier officiel, copiez-le dans assets/ puis ex. 'assets/logo-otc.png'
-        logo: ''
+        logo: 'assets/logo-otc.png',
+        // Filigrane en fond de page : '' = symbole dessiné par le site.
+        logoMark: 'assets/logo-otc-mark.png'
     },
 
     commercials: [

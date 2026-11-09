@@ -23,9 +23,8 @@ commercials: [
 
 ## Logo imprimé
 
-Le bon imprimé utilise un logo O.T.C redessiné en SVG ([assets/logo.svg](assets/logo.svg)).
-Pour utiliser le fichier officiel : copiez-le dans `assets/` (ex. `assets/logo-otc.png`, fond transparent de préférence)
-puis indiquez `logo: 'assets/logo-otc.png'` dans [js/config.js](js/config.js).
+Le bon imprimé utilise le logo officiel ([assets/logo-otc.png](assets/logo-otc.png)) et son symbole en filigrane ([assets/logo-otc-mark.png](assets/logo-otc-mark.png)), sur fond transparent.
+Pour les changer : remplacez ces fichiers ou modifiez `logo` et `logoMark` dans [js/config.js](js/config.js).
 
 ## Où sont stockées les données ?
 

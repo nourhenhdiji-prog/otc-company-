@@ -932,7 +932,6 @@
                 const dataUrl = await renderDocument(agent, order, pages[i], {
                     pageNum: i + 1,
                     totalPages: pages.length,
-                    firstIndex: i * ITEMS_PER_PAGE + 1,
                     qty: totalQty(items),
                     refs: items.length
                 });
@@ -1011,6 +1010,9 @@
         const right = items.slice(ITEMS_PER_TABLE);
         const label = 'font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ' + DOC.muted + '; margin: 0 0 6px;';
         const box = 'flex: 1; padding: 12px 14px; border: 1px solid ' + DOC.line + '; border-radius: 10px; background: rgba(255, 255, 255, 0.85);';
+        const infoLine = function (name, value) {
+            return '<p style="margin: 0 0 5px; font-size: 13px; color: ' + DOC.grey + ';"><strong style="color: ' + DOC.ink + ';">' + name + ' :</strong> ' + esc(value.trim()) + '</p>';
+        };
 
         const legal = [
             esc(COMPANY.address),
@@ -1019,17 +1021,13 @@
             [COMPANY.mf ? 'MF : ' + esc(COMPANY.mf) : '', COMPANY.rc ? 'RC : ' + esc(COMPANY.rc) : ''].filter(Boolean).join(' · ')
         ].filter(Boolean).join('<br>');
 
-        const clientLines = [
-            order.address.trim() ? esc(order.address.trim()) : '',
-            order.phone.trim() ? 'Tél : ' + esc(order.phone.trim()) : '',
-            order.email.trim() ? esc(order.email.trim()) : ''
-        ].filter(Boolean).join('<br>');
-
         const html =
             '<div style="position: relative; width: 210mm; height: 297mm; padding: 30px 34px 20px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #ffffff; color: ' + DOC.ink + '; font-family: ' + DOC_FONT_STACK + ';">' +
                 // Faded mark in the background, as on the printed OTC documents.
                 '<div style="position: absolute; right: -150px; bottom: 120px; width: 560px; height: 560px;">' +
-                    logoMark('width: 560px; height: 560px; display: block; color: #f1f1f3; --brand-red: #f8eaeb;') +
+                    (COMPANY.logoMark
+                        ? '<img src="' + esc(COMPANY.logoMark) + '" alt="" style="display: block; width: 560px; height: auto; opacity: 0.07;">'
+                        : logoMark('width: 560px; height: 560px; display: block; color: #f1f1f3; --brand-red: #f8eaeb;')) +
                 '</div>' +
 
                 '<div style="position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;">' +
@@ -1040,7 +1038,6 @@
                     '<div style="text-align: right;">' +
                         '<p style="margin: 4px 0 0; font-size: 25px; font-weight: 800; letter-spacing: 0.06em; color: ' + DOC.grey + ';">BON DE COMMANDE</p>' +
                         '<p style="margin: 8px 0 0; font-size: 16px; font-weight: 800; color: ' + DOC.red + ';">N° ' + orderCode(agent.id, order.number) + '</p>' +
-                        '<p style="margin: 6px 0 0; font-size: 12.5px; color: ' + DOC.muted + ';">Date : <strong style="color: ' + DOC.ink + ';">' + formatDate(order.date) + '</strong></p>' +
                         (page.totalPages > 1 ? '<p style="margin: 2px 0 0; font-size: 12.5px; color: ' + DOC.muted + ';">Page ' + page.pageNum + ' / ' + page.totalPages + '</p>' : '') +
                     '</div>' +
                 '</div>' +
@@ -1051,21 +1048,23 @@
                 '</div>' +
 
                 '<div style="position: relative; display: flex; gap: 16px;">' +
-                    '<div style="' + box + '">' +
-                        '<p style="' + label + '">Client</p>' +
-                        '<p style="margin: 0; font-size: 16px; font-weight: 800;">' + esc(order.client.trim()) + '</p>' +
-                        (clientLines ? '<p style="margin: 4px 0 0; font-size: 12px; line-height: 1.55; color: ' + DOC.grey + ';">' + clientLines + '</p>' : '') +
-                    '</div>' +
-                    '<div style="' + box + ' flex: 0 0 34%;">' +
-                        '<p style="' + label + '">Agent commercial</p>' +
-                        '<p style="margin: 0; font-size: 16px; font-weight: 800;">' + esc(agent.name) + '</p>' +
-                        '<p style="margin: 4px 0 0; font-size: 12px; color: ' + DOC.grey + ';">Commercial n°' + agent.id + '</p>' +
+                    '<div style="' + box + ' display: flex; gap: 16px;">' +
+                        '<div style="flex: 1;">' +
+                            infoLine('Agent Commercial', agent.name) +
+                            infoLine('Client', order.client) +
+                            infoLine('Adresse', order.address) +
+                        '</div>' +
+                        '<div style="flex: 1;">' +
+                            infoLine('Email', order.email) +
+                            infoLine('N° de tél (Responsable)', order.phone) +
+                            infoLine('Date', formatDate(order.date)) +
+                        '</div>' +
                     '</div>' +
                 '</div>' +
 
                 '<div style="position: relative; display: flex; gap: 16px; margin-top: 16px; flex: 1; min-height: 0;">' +
-                    '<div style="flex: 1; min-height: 0;">' + documentTable(left, page.firstIndex) + '</div>' +
-                    '<div style="flex: 1; min-height: 0;">' + documentTable(right, page.firstIndex + ITEMS_PER_TABLE) + '</div>' +
+                    '<div style="flex: 1; min-height: 0;">' + documentTable(left) +'</div>' +
+                    '<div style="flex: 1; min-height: 0;">' + documentTable(right) +'</div>' +
                 '</div>' +
 
                 '<div style="position: relative; display: flex; gap: 16px; margin-top: 16px;">' +
@@ -1115,24 +1114,23 @@
         '</div>';
     }
 
-    function documentTable(items, firstIndex) {
+    function documentTable(items) {
         const head = 'padding: 0 8px; height: 30px; background: ' + DOC.grey + '; color: #ffffff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;';
         const cell = 'padding: 0 8px; border-bottom: 1px solid ' + DOC.line + '; vertical-align: middle; font-size: 12.5px;';
         let rows = '<tr>' +
-            '<th style="' + head + ' width: 26px; text-align: center;">#</th>' +
-            '<th style="' + head + ' text-align: left;">Référence</th>' +
-            '<th style="' + head + ' width: 42px; text-align: center;">Qté</th>' +
-            '<th style="' + head + ' width: 34%; text-align: left;">Remise / Note</th>' +
+            '<th style="' + head + ' text-align: center;">Référence</th>' +
+            '<th style="' + head + ' text-align: center;">Quantité</th>' +
+            '<th style="' + head + ' text-align: center;">Remise / Note</th>' +
         '</tr>';
 
         for (let i = 0; i < ITEMS_PER_TABLE; i += 1) {
             const item = items[i];
             // Same base height on every row so empty rows don't collapse.
             rows += '<tr style="height: 26px;' + (i % 2 ? ' background: rgba(61, 61, 64, 0.04);' : '') + '">' +
-                '<td style="' + cell + ' text-align: center; font-size: 10px; color: ' + DOC.muted + ';">' + (item ? firstIndex + i : '') + '</td>' +
-                '<td style="' + cell + ' font-weight: 700; letter-spacing: 0.02em;">' + (item ? esc(item.ref.trim()) : '') + '</td>' +
-                '<td style="' + cell + ' text-align: center; font-weight: ' + (item && item.qty > 1 ? '800; color: ' + DOC.red : '500') + ';">' + (item ? item.qty : '') + '</td>' +
-                '<td style="' + cell + ' font-weight: 600; color: ' + DOC.grey + ';">' + (item ? esc(item.note.trim()) : '') + '</td>' +
+                '<td style="' + cell + ' text-align: center; font-weight: 700; letter-spacing: 0.02em;">' + (item ? esc(item.ref.trim()) : '') + '</td>' +
+                // As on the paper form: only quantities above 1 are written.
+                '<td style="' + cell + ' text-align: center; font-weight: 800; color: ' + DOC.red + ';">' + (item && item.qty > 1 ? 'x ' + item.qty : '') + '</td>' +
+                '<td style="' + cell + ' text-align: center; font-weight: 600; color: ' + DOC.grey + ';">' + (item ? esc(item.note.trim()) : '') + '</td>' +
             '</tr>';
         }
 
