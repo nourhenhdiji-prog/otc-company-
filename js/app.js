@@ -217,8 +217,9 @@
         return String(value).padStart(size, '0');
     }
 
-    function orderCode(agentId, number) {
-        return 'BC-' + pad(agentId, 2) + '-' + pad(number, 4);
+    // Ex. BC-26-0001 : deux derniers chiffres de l'année du bon, puis son numéro.
+    function orderCode(order) {
+        return 'BC-' + order.date.slice(2, 4) + '-' + pad(order.number, 4);
     }
 
     function formatDate(iso) {
@@ -547,7 +548,7 @@
                     return true;
                 }
                 const haystack = [
-                    o.client, o.address, String(o.number), orderCode(agent.id, o.number), formatDate(o.date)
+                    o.client, o.address, String(o.number), orderCode(o), formatDate(o.date)
                 ].concat(o.items.map(function (i) { return i.ref; })).join(' ').toLocaleLowerCase('fr-FR');
                 return haystack.indexOf(query) !== -1;
             })
@@ -568,7 +569,7 @@
                 '<span class="order-num"><small>N°</small>' + o.number + '</span>' +
                 '<span class="order-main">' +
                     '<strong>' + (o.client.trim() ? esc(o.client) : '<span class="muted">Client non renseigné</span>') + '</strong>' +
-                    '<small><span class="mono">' + orderCode(agent.id, o.number) + '</span> · ' + formatDate(o.date) + ' · ' + plural(qty, 'monture', 'montures') + '</small>' +
+                    '<small><span class="mono">' + orderCode(o) + '</span> · ' + formatDate(o.date) + ' · ' + plural(qty, 'monture', 'montures') + '</small>' +
                 '</span>' +
                 statusPill(o.status) +
                 '<span class="order-chevron">' + ICON.chevron + '</span>' +
@@ -662,7 +663,7 @@
                 '<section class="editor-head">' +
                     '<div>' +
                         '<h1>Commande n°' + number + ' <span id="statusSlot">' + statusPill(order.status) + '</span></h1>' +
-                        '<p class="muted small"><span class="mono">' + orderCode(agent.id, number) + '</span> · <span id="saveState" class="save-state">' + ICON.check + 'Enregistrée</span></p>' +
+                        '<p class="muted small"><span class="mono">' + orderCode(order) + '</span> · <span id="saveState" class="save-state">' + ICON.check + 'Enregistrée</span></p>' +
                     '</div>' +
                     '<div class="editor-actions">' +
                         '<button type="button" class="btn btn-ghost" id="dupOrder">' + ICON.copy + '<span>Dupliquer</span></button>' +
@@ -915,12 +916,13 @@
 
         try {
             const pages = chunk(items, ITEMS_PER_PAGE);
-            const baseName = [orderCode(agent.id, order.number), cleanFileName(order.client), order.date].filter(Boolean).join('_');
+            const baseName = [orderCode(order), cleanFileName(order.client), order.date].filter(Boolean).join('_');
 
             for (let i = 0; i < pages.length; i += 1) {
                 const dataUrl = await renderDocument(agent, order, pages[i], {
                     pageNum: i + 1,
                     totalPages: pages.length,
+                    firstIndex: i * ITEMS_PER_PAGE + 1,
                     qty: totalQty(items),
                     refs: items.length
                 });
@@ -1013,7 +1015,7 @@
         const html =
             '<div style="position: relative; width: 210mm; height: 297mm; padding: 30px 34px 20px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; background: #ffffff; color: ' + DOC.ink + '; font-family: ' + DOC_FONT_STACK + ';">' +
                 // Faded mark in the background, as on the printed OTC documents.
-                '<div style="position: absolute; right: -150px; bottom: 120px; width: 560px; height: 560px;">' +
+                '<div style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center;">' +
                     (COMPANY.logoMark
                         ? '<img src="' + esc(COMPANY.logoMark) + '" alt="" style="display: block; width: 560px; height: auto; opacity: 0.07;">'
                         : logoMark('width: 560px; height: 560px; display: block; color: #f1f1f3; --brand-red: #f8eaeb;')) +
@@ -1026,7 +1028,7 @@
                     '</div>' +
                     '<div style="text-align: right;">' +
                         '<p style="margin: 4px 0 0; font-size: 25px; font-weight: 800; letter-spacing: 0.06em; color: ' + DOC.grey + ';">BON DE COMMANDE</p>' +
-                        '<p style="margin: 8px 0 0; font-size: 16px; font-weight: 800; color: ' + DOC.red + ';">N° ' + orderCode(agent.id, order.number) + '</p>' +
+                        '<p style="margin: 8px 0 0; font-size: 16px; font-weight: 800; color: ' + DOC.red + ';">N° ' + orderCode(order) + '</p>' +
                         (page.totalPages > 1 ? '<p style="margin: 2px 0 0; font-size: 12.5px; color: ' + DOC.muted + ';">Page ' + page.pageNum + ' / ' + page.totalPages + '</p>' : '') +
                     '</div>' +
                 '</div>' +
@@ -1052,8 +1054,8 @@
                 '</div>' +
 
                 '<div style="position: relative; display: flex; gap: 16px; margin-top: 16px; flex: 1; min-height: 0;">' +
-                    '<div style="flex: 1; min-height: 0;">' + documentTable(left) +'</div>' +
-                    '<div style="flex: 1; min-height: 0;">' + documentTable(right) +'</div>' +
+                    '<div style="flex: 1; min-height: 0;">' + documentTable(left, page.firstIndex) + '</div>' +
+                    '<div style="flex: 1; min-height: 0;">' + documentTable(right, page.firstIndex + ITEMS_PER_TABLE) + '</div>' +
                 '</div>' +
 
                 '<div style="position: relative; display: flex; gap: 16px; margin-top: 16px;">' +
@@ -1103,10 +1105,11 @@
         '</div>';
     }
 
-    function documentTable(items) {
-        const head = 'padding: 0 8px; height: 30px; background: ' + DOC.grey + '; color: #ffffff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;';
-        const cell = 'padding: 0 8px; border-bottom: 1px solid ' + DOC.line + '; vertical-align: middle; font-size: 12.5px;';
+    function documentTable(items, firstIndex) {
+        const head = 'padding: 0 6px; height: 30px; background: ' + DOC.grey + '; border: 1px solid #77777c; color: #ffffff; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;';
+        const cell = 'padding: 0 6px; border: 1px solid #9a9aa2; vertical-align: middle; font-size: 12.5px;';
         let rows = '<tr>' +
+            '<th style="' + head + ' width: 30px; text-align: center;">N°</th>' +
             '<th style="' + head + ' text-align: center;">Référence</th>' +
             '<th style="' + head + ' text-align: center;">Quantité</th>' +
             '<th style="' + head + ' text-align: center;">Remise / Note</th>' +
@@ -1116,6 +1119,7 @@
             const item = items[i];
             // Same base height on every row so empty rows don't collapse.
             rows += '<tr style="height: 26px;' + (i % 2 ? ' background: rgba(61, 61, 64, 0.04);' : '') + '">' +
+                '<td style="' + cell + ' text-align: center; font-size: 11px; font-weight: 600; color: ' + DOC.muted + ';">' + (item ? firstIndex + i : '') + '</td>' +
                 '<td style="' + cell + ' text-align: center; font-weight: 700; letter-spacing: 0.02em;">' + (item ? esc(item.ref.trim()) : '') + '</td>' +
                 // As on the paper form: only quantities above 1 are written.
                 '<td style="' + cell + ' text-align: center; font-weight: 800; color: ' + DOC.red + ';">' + (item && item.qty > 1 ? 'x ' + item.qty : '') + '</td>' +
@@ -1123,7 +1127,7 @@
             '</tr>';
         }
 
-        return '<table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid ' + DOC.line + ';">' + rows + '</table>';
+        return '<table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid #9a9aa2;">' + rows + '</table>';
     }
 
     /* ---------- Boot ---------- */
