@@ -77,7 +77,7 @@ index.html        page unique
 css/styles.css    design
 js/config.js      société + liste des commerciaux
 js/app.js         application (connexion, commandes, génération du bon)
-assets/           icône
+assets/           logos et icônes
 .gitlab-ci.yml    déploiement GitLab Pages
 .nojekyll         désactive Jekyll sur GitHub Pages
 ```
