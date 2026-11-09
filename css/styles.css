@@ -280,7 +280,7 @@ svg {
 .brand-mark {
     display: grid;
     place-items: center;
-    width: 36px;
+    width: 56px;
     height: 36px;
     border: 1px solid var(--border);
     border-radius: 11px;
@@ -291,6 +291,12 @@ svg {
 .brand-mark svg {
     width: 26px;
     height: 26px;
+}
+
+.brand-mark img {
+    display: block;
+    width: 46px;
+    height: auto;
 }
 
 .otc-logo {

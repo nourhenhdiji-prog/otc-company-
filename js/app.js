@@ -333,7 +333,7 @@
     }
 
     function brand() {
-        return '<a class="brand" href="#/"><span class="brand-mark">' + logoMark() + '</span>' +
+        return '<a class="brand" href="#/"><span class="brand-mark">' + (COMPANY.logoMark ? '<img src="' + esc(COMPANY.logoMark) + '" alt="">' : logoMark()) + '</span>' +
             '<span class="brand-text"><strong>' + esc(COMPANY.short) + '</strong><small>Bons de commande</small></span></a>';
     }
 
